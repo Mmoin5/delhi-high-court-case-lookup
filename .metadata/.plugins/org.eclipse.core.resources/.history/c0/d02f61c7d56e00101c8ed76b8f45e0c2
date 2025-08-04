@@ -1,0 +1,58 @@
+package com.courtdata.court_data_fetcher.service;
+
+import java.time.LocalDateTime;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.springframework.stereotype.Service;
+
+import com.courtdata.court_data_fetcher.entity.CaseDetails;
+import com.courtdata.court_data_fetcher.repository.QueryLogRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CourtDataService {
+
+	private final QueryLogRepository repository;
+
+	public CaseDetails fetchCaseDetails(String caseType, String caseNumber, String filingYear) {
+		CaseDetails details = new CaseDetails();
+		try {
+			// ✅ Target URL (Delhi High Court homepage for now)
+			String url = "https://delhihighcourt.nic.in/";
+			Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").timeout(10000).get();
+
+			// ✅ Parse sample data (we'll replace this with actual case details later)
+			String title = doc.title(); // Example: "Delhi High Court"
+			String heading = doc.select("h2").text(); // Example: grabs first h2 heading
+
+			details.setCaseType(caseType);
+			details.setCaseNumber(caseNumber);
+			details.setFilingYear(filingYear);
+			details.setFilingDate("2025-01-01");
+			details.setNextHearingDate("2025-02-01");
+			details.setParties("Parsed from site: " + heading);
+			details.setLatestOrderPDF("http://example.com/order.pdf");
+
+			// ✅ Save raw HTML to DB for debugging
+			details.setRawResponse(doc.outerHtml());
+			details.setTimestamp(LocalDateTime.now());
+
+			// ✅ Save into MySQL
+			repository.save(details);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			details.setCaseType(caseType);
+			details.setCaseNumber(caseNumber);
+			details.setFilingYear(filingYear);
+			details.setParties("Error fetching data");
+			details.setTimestamp(LocalDateTime.now());
+			repository.save(details);
+		}
+
+		return details;
+	}
+}

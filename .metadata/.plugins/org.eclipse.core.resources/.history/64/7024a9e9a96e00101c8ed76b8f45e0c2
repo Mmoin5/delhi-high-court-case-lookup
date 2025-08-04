@@ -1,0 +1,9 @@
+package com.courtdata.court_data_fetcher.QueryLogRepository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.courtdata.court_data_fetcher.CaseDetailsDTO.CaseDetails;
+
+public interface QueryLogRepository extends JpaRepository<CaseDetails, Long> {
+
+}

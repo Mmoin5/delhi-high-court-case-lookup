@@ -1,0 +1,81 @@
+package com.courtdata.court_data_fetcher.service;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.springframework.stereotype.Service;
+
+import com.courtdata.court_data_fetcher.entity.CaseDetails;
+import com.courtdata.court_data_fetcher.repository.QueryLogRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CourtDataService {
+
+	private final QueryLogRepository repository;
+
+	public CaseDetails fetchCaseDetails(String caseType, String caseNumber, String filingYear, String captcha) {
+		CaseDetails details = new CaseDetails();
+		try {
+			String url = "https://dhccaseinfo.nic.in/pcase/guiCaseWise.php";
+
+			// ✅ Submit POST with case details + captcha
+			Connection.Response response = Jsoup.connect(url).userAgent("Mozilla/5.0").timeout(10000)
+					.data("ctype", caseType).data("cnumber", caseNumber).data("cyear", filingYear)
+					.data("captcha_code", captcha).method(Connection.Method.POST).execute();
+
+			Document doc = response.parse();
+
+			// ✅ Parse fields (adjust selectors based on real HTML)
+			String filingDate = doc.select("td:contains(Filing Date) + td").text();
+			String nextHearingDate = doc.select("td:contains(Next Hearing Date) + td").text();
+			String parties = doc.select("td:contains(Parties) + td").text();
+			String pdfLink = doc.select("a[href$=.pdf]").attr("abs:href");
+
+			details.setCaseType(caseType);
+			details.setCaseNumber(caseNumber);
+			details.setFilingYear(filingYear);
+			details.setFilingDate(filingDate.isEmpty() ? "Not Found" : filingDate);
+			details.setNextHearingDate(nextHearingDate.isEmpty() ? "Not Found" : nextHearingDate);
+			details.setParties(parties.isEmpty() ? "Not Found" : parties);
+			details.setLatestOrderPDF(pdfLink.isEmpty() ? "Not Found" : pdfLink);
+			details.setRawResponse(doc.outerHtml());
+			details.setTimestamp(LocalDateTime.now());
+
+			repository.save(details);
+		} catch (Exception e) {
+			e.printStackTrace();
+			details.setCaseType(caseType);
+			details.setCaseNumber(caseNumber);
+			details.setFilingYear(filingYear);
+			details.setParties("Error fetching data");
+			details.setTimestamp(LocalDateTime.now());
+			repository.save(details);
+		}
+		return details;
+	}
+
+	public String getCaptchaCode() throws Exception {
+		String baseUrl = "https://dhccaseinfo.nic.in/pcase/guiCaseWise.php";
+
+		Connection.Response mainPage = Jsoup.connect(baseUrl).userAgent("Mozilla/5.0").timeout(10000).execute();
+
+		String html = mainPage.body();
+		Document doc = Jsoup.parse(html);
+
+		// Extract numeric captcha
+		String captcha = doc.select("label#cap font").text();
+		if (captcha == null || captcha.isEmpty()) {
+			throw new RuntimeException("Captcha code not found on page");
+		}
+
+		System.out.println("Captcha code found: " + captcha);
+		return captcha;
+	}
+
+}

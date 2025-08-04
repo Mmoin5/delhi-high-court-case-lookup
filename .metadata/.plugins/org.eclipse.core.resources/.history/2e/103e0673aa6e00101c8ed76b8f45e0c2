@@ -1,0 +1,5 @@
+package com.courtdata.court_data_fetcher.CourtController;
+
+public class CourtDataController {
+
+}

@@ -1,0 +1,59 @@
+/* Navbar container */
+.navbar {
+    background-color: #ffffff;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    /* ✅ Left & Right alignment */
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    /* subtle shadow */
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Left side links */
+.nav-left .nav-link {
+    color: #2c3e50;
+    text-decoration: none;
+    margin-right: 20px;
+    font-size: 18px;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-left .nav-link:hover {
+    color: #1a73e8;
+    /* Modern blue hover */
+}
+
+/* Optional hover underline animation */
+.nav-left .nav-link::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 2px;
+    background: #1a73e8;
+    left: 0;
+    bottom: -4px;
+    transition: width 0.3s;
+}
+
+.nav-left .nav-link:hover::after {
+    width: 100%;
+}
+
+/* Right side title */
+.nav-right .app-title {
+    font-size: 18px;
+    color: #1a73e8;
+    font-weight: bold;
+}
+
+/* Global styles */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}

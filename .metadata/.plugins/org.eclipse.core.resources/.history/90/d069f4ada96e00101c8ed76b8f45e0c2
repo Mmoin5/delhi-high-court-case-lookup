@@ -1,0 +1,5 @@
+package com.courtdata.court_data_fetcher.QueryLogRepository;
+
+public interface QueryLogRepository {
+
+}

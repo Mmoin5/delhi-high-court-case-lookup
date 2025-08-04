@@ -1,0 +1,102 @@
+package com.courtdata.court_data_fetcher.service;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
+
+import com.courtdata.court_data_fetcher.entity.CaseDetails;
+import com.courtdata.court_data_fetcher.repository.QueryLogRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CourtDataService {
+
+	private final QueryLogRepository repository;
+
+	public CaseDetails fetchCaseDetails(String caseType, String caseNumber, String filingYear) throws Exception {
+		String searchUrl = "https://dhccaseinfo.nic.in/pcase/case_history.php";
+
+		// 1️⃣ Get captcha code dynamically
+		String baseUrl = "https://dhccaseinfo.nic.in/pcase/guiCaseWise.php";
+		Connection.Response mainPage = Jsoup.connect(baseUrl).userAgent("Mozilla/5.0").timeout(10000).execute();
+
+		Map<String, String> cookies = mainPage.cookies();
+		Document doc = Jsoup.parse(mainPage.body());
+		String captcha = doc.select("label#cap font").text();
+		String randomId = doc.select("input#randomid").attr("value");
+
+		if (captcha.isEmpty()) {
+			throw new RuntimeException("Failed to get captcha");
+		}
+
+		System.out.println("Using Captcha: " + captcha);
+
+		// 2️⃣ Submit form with case details
+		Connection.Response response = Jsoup.connect(searchUrl).userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+				.header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+				.header("Accept-Language", "en-US,en;q=0.5").header("Connection", "keep-alive").cookies(cookies)
+				.data("ctype", caseType).data("regno", caseNumber).data("regyr", filingYear)
+				.data("captcha_code", captcha).data("randomid", randomId).method(Connection.Method.POST).timeout(60000) // 60
+																														// seconds
+				.execute();
+
+		System.out.println("Status Code: " + response.statusCode());
+		System.out.println("Response Length: " + response.body().length());
+
+		String html = response.body();
+		Document resultDoc = Jsoup.parse(html);
+
+		// 3️⃣ ✅ Parse real fields from HTML
+		String filingDate = resultDoc.select("td:contains(Date of Filing :) + td").text();
+		String nextHearingDate = resultDoc.select("td:contains(Date of Disposal :) + td").text();
+
+		String parties = "";
+		Elements partyElements = resultDoc.select("table font b");
+		if (partyElements.size() >= 2) {
+			parties = partyElements.get(0).text() + " Vs. " + partyElements.get(1).text();
+		}
+
+		String latestOrderPDF = resultDoc.select("a[href$=.pdf]").attr("abs:href");
+
+		// 4️⃣ Save to entity
+		CaseDetails details = new CaseDetails();
+		details.setCaseType(caseType);
+		details.setCaseNumber(caseNumber);
+		details.setFilingYear(filingYear);
+		details.setFilingDate(filingDate.isEmpty() ? null : filingDate);
+		details.setNextHearingDate(nextHearingDate.isEmpty() ? null : nextHearingDate);
+		details.setParties(parties.isEmpty() ? "Not Available" : parties);
+		details.setLatestOrderPDF(latestOrderPDF.isEmpty() ? null : latestOrderPDF);
+		details.setRawResponse(html);
+		details.setTimestamp(LocalDateTime.now());
+
+		repository.save(details);
+		return details;
+	}
+
+	public String getCaptchaCode() throws Exception {
+		String baseUrl = "https://dhccaseinfo.nic.in/pcase/guiCaseWise.php";
+
+		Connection.Response mainPage = Jsoup.connect(baseUrl).userAgent("Mozilla/5.0").timeout(10000).execute();
+
+		String html = mainPage.body();
+		Document doc = Jsoup.parse(html);
+
+		// Extract numeric captcha
+		String captcha = doc.select("label#cap font").text();
+		if (captcha == null || captcha.isEmpty()) {
+			throw new RuntimeException("Captcha code not found on page");
+		}
+
+		System.out.println("Captcha code found: " + captcha);
+		return captcha;
+	}
+
+}

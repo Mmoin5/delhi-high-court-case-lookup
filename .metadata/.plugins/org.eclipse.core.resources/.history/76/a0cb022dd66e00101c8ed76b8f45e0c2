@@ -1,0 +1,48 @@
+package com.courtdata.court_data_fetcher.service;
+
+import java.time.LocalDateTime;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.springframework.stereotype.Service;
+
+import com.courtdata.court_data_fetcher.entity.CaseDetails;
+import com.courtdata.court_data_fetcher.repository.QueryLogRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CourtDataService {
+
+	private final QueryLogRepository repository;
+
+	public CaseDetails fetchCaseDetails(String caseType, String caseNumber, String filingYear) {
+		CaseDetails details = new CaseDetails();
+		try {
+			String url = "https://delhihighcourt.nic.in/";
+			Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").timeout(10000).get();
+
+			// ✅ Extract something real from the page
+			String pageTitle = doc.title();
+			String firstHeading = doc.select("h2").text(); // grabs first h2 heading
+
+			details.setCaseType(caseType);
+			details.setCaseNumber(caseNumber);
+			details.setFilingYear(filingYear);
+			details.setFilingDate("Scraped from: " + pageTitle);
+			details.setNextHearingDate("Parsed heading: " + firstHeading);
+			details.setParties("Party A vs Party B"); // Replace with real parsing later
+			details.setLatestOrderPDF("http://example.com/order.pdf");
+
+			details.setRawResponse(doc.outerHtml());
+			details.setTimestamp(LocalDateTime.now());
+
+			repository.save(details);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return details;
+	}
+
+}

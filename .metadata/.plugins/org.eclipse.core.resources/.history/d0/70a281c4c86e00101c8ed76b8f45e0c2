@@ -1,0 +1,37 @@
+package com.courtdata.court_data_fetcher.service;
+
+import java.time.LocalDateTime;
+
+import org.springframework.stereotype.Service;
+
+import com.courtdata.court_data_fetcher.entity.CaseDetails;
+import com.courtdata.court_data_fetcher.repository.QueryLogRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor // Lombok will inject final fields via constructor
+public class CourtDataService {
+
+	private final QueryLogRepository queryLogRepository;
+
+	public CaseDetails fetchCaseDetails(String caseType, String caseNumber, String filingYear) {
+
+		// For now, creating dummy data. Scraping logic will replace this later.
+		CaseDetails details = new CaseDetails();
+		details.setCaseType(caseType);
+		details.setCaseNumber(caseNumber);
+		details.setFilingYear(filingYear);
+		details.setFilingDate("2025-01-01");
+		details.setNextHearingDate("2025-02-01");
+		details.setParties("Party A, Party B");
+		details.setLatestOrderPDF("http://example.com/order.pdf");
+		details.setRawResponse("<html>RAW_HTML_HERE</html>");
+		details.setTimestamp(LocalDateTime.now());
+
+		// Save in DB
+		queryLogRepository.save(details);
+
+		return details;
+	}
+}

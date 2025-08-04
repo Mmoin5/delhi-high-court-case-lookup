@@ -1,0 +1,29 @@
+package com.courtdata.court_data_fetcher.controller;
+
+import com.courtdata.court_data_fetcher.entity.CaseDetails;
+import com.courtdata.court_data_fetcher.service.CourtDataService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/cases")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
+public class CourtDataController {
+
+	private final CourtDataService service;
+
+	@GetMapping("/captcha")
+	public ResponseEntity<String> getCaptcha() throws Exception {
+		String code = service.getCaptchaCode();
+		return ResponseEntity.ok(code);
+	}
+
+	@PostMapping("/fetch")
+	public ResponseEntity<CaseDetails> fetchCase(@RequestParam String caseType, @RequestParam String caseNumber,
+			@RequestParam String filingYear, @RequestParam String captcha) {
+		CaseDetails details = service.fetchCaseDetails(caseType, caseNumber, filingYear, captcha);
+		return ResponseEntity.ok(details);
+	}
+}

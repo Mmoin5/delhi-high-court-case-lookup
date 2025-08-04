@@ -1,0 +1,59 @@
+package com.courtdata.court_data_fetcher.controller;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.courtdata.court_data_fetcher.entity.CaseDetails;
+import com.courtdata.court_data_fetcher.service.CourtDataService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/cases")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
+public class CourtDataController {
+
+	private final CourtDataService service;
+
+	@GetMapping("/captcha")
+	public ResponseEntity<String> getCaptcha() throws Exception {
+		String code = service.getCaptchaCode();
+		return ResponseEntity.ok(code);
+	}
+
+	@PostMapping("/fetch")
+	public ResponseEntity<Map<String, Object>> fetchCase(@RequestParam String caseType, @RequestParam String caseNumber,
+			@RequestParam String filingYear) throws Exception {
+		CaseDetails details = service.fetchCaseDetails(caseType, caseNumber, filingYear);
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("id", details.getId());
+		response.put("caseType", details.getCaseType());
+		response.put("caseNumber", details.getCaseNumber());
+		response.put("filingYear", details.getFilingYear());
+		response.put("filingDate", details.getFilingDate());
+		response.put("nextHearingDate", details.getNextHearingDate());
+		response.put("parties", details.getParties());
+
+		// ✅ Convert comma-separated to list before returning
+		if (details.getOrderPdfs() != null && !details.getOrderPdfs().equals("No PDF Available")) {
+			response.put("orderPdfs", Arrays.asList(details.getOrderPdfs().split(",")));
+		} else {
+			response.put("orderPdfs", new ArrayList<>());
+		}
+
+		return ResponseEntity.ok(response);
+	}
+
+}
