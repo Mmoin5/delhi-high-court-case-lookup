@@ -55,5 +55,7 @@ Frontend: http://localhost:5173
 Backend: http://localhost:8081
 
 ### 👨‍💻 Author
-## Mohammed Moin Pasha
-## mmoinpasha500@gmail.com
+
+ Mohammed Moin Pasha
+ 
+ mmoinpasha500@gmail.com
