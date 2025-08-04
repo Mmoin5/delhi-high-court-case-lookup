@@ -19,6 +19,7 @@ Built with **Spring Boot (Java)** for backend and **React** for frontend.
 ## 📂 Project Structure
 
 delhi-high-court-case-lookup/
+
 ├─ court-data-fetcher # Spring Boot backend
 
 ├─ frontend-logic # React frontend
@@ -54,5 +55,5 @@ Frontend: http://localhost:5173
 Backend: http://localhost:8081
 
 ### 👨‍💻 Author
-### Mohammed Moin Pasha
-### mmoinpasha500@gmail.com
+## Mohammed Moin Pasha
+## mmoinpasha500@gmail.com
